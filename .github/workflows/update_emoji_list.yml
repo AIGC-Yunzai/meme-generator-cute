@@ -8,7 +8,7 @@ on:
     branches:
       - "main"
     paths:
-      - "emoji/**"
+      - "memes/**"
   workflow_dispatch:  # 添加手动触发
 
 jobs:
@@ -49,7 +49,7 @@ jobs:
       - name: Change config
         run: |
           mkdir -p ~/.config/meme_generator
-          echo -e "[meme]\nload_builtin_memes = false\nmeme_dirs = [\"$GITHUB_WORKSPACE/emoji\"]" > ~/.config/meme_generator/config.toml
+          echo -e "[meme]\nload_builtin_memes = false\nmeme_dirs = [\"$GITHUB_WORKSPACE/memes\"]" > ~/.config/meme_generator/config.toml
 
       - name: Update memes.md
         run: python3 wiki/update_meme_list.py
