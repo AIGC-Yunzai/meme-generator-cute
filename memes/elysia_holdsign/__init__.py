@@ -13,7 +13,6 @@ from meme_generator import (
     add_meme,
 )
 from meme_generator.exception import MemeFeedback, TextOverLength
-from meme_generator.tags import MemeTags
 
 img_dir = Path(__file__).parent / "images"
 
@@ -69,8 +68,7 @@ def elysia_holdsign(images, texts: list[str], args: Model):
             min_fontsize=30,
             allow_wrap=True,
             lines_align="center",
-            spacing=10,
-            fontname="FZShaoEr-M11S",
+            font_families=["FZShaoEr-M11S"],
             fill="#3b0b07",
         )
     except ValueError:
@@ -88,7 +86,7 @@ add_meme(
     default_texts=[DEFAULT_TEXT],
     args_type=args_type,
     keywords=["爱莉举牌"],
-    tags={"爱莉", "爱莉希雅"} | MemeTags.honkai3,
+    tags={"爱莉", "爱莉希雅", "崩坏3", "米哈游"},
     date_created=datetime(2025, 8, 9),
     date_modified=datetime(2025, 8, 9),
 )
