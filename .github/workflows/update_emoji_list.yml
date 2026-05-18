@@ -1,15 +1,19 @@
-name: Update memes.md
+name: Update wiki_emoji_list.md
+
+permissions:  # 添加权限配置
+  contents: write  # 允许推送更改
 
 on:
   push:
     branches:
       - "main"
     paths:
-      - "memes/**"
+      - "emoji/**"
+  workflow_dispatch:  # 添加手动触发
 
 jobs:
   update-and-push:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -33,11 +37,11 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt install python3-pip
-          pip3 install -U meme_generator
+          pip3 install -U "meme_generator<0.2.0" filetype pillow
 
       - name: Install fonts
         run: |
-          sudo apt install fonts-noto-color-emoji libgl1-mesa-glx libgl1-mesa-dri
+          sudo apt install fonts-noto-color-emoji libgl1 libglx-mesa0 libgl1-mesa-dri libegl1 libegl-mesa0
           sudo mkdir /usr/share/fonts/myfonts
           sudo cp main/resources/fonts/* /usr/share/fonts/myfonts/
           fc-cache -fv
@@ -45,7 +49,7 @@ jobs:
       - name: Change config
         run: |
           mkdir -p ~/.config/meme_generator
-          echo -e "[meme]\nload_builtin_memes = false\nmeme_dirs = [\"$GITHUB_WORKSPACE/memes\"]" > ~/.config/meme_generator/config.toml
+          echo -e "[meme]\nload_builtin_memes = false\nmeme_dirs = [\"$GITHUB_WORKSPACE/emoji\"]" > ~/.config/meme_generator/config.toml
 
       - name: Update memes.md
         run: python3 wiki/update_meme_list.py
