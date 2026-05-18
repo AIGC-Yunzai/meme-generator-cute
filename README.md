@@ -4,13 +4,19 @@
 
 由 `AIGC-Yunzai` 大家一起维护
 
-## 表情列表
+## 😀 表情列表清单
 
-表情详细信息、表情预览等可以在 [--> 表情列表 <--](https://github.com/AIGC-Yunzai/meme-generator-cute/wiki/%E8%A1%A8%E6%83%85%E5%88%97%E8%A1%A8) 查看
+### 😉 名称排序  A-Z
+
+* [表情列表](https://github.com/AIGC-Yunzai/meme-generator-cute/wiki/%E8%A1%A8%E6%83%85%E5%88%97%E8%A1%A8)
+
+### 🥰 时间排序  新-旧
+
+* [表情列表](https://github.com/AIGC-Yunzai/meme-generator-cute/wiki/emoji_list)
 
 ## 使用方式
 
-参考 [`meme-generator` 加载其他表情的方式](https://github.com/AIGC-Yunzai/meme-generator/wiki/%E5%8A%A0%E8%BD%BD%E5%85%B6%E4%BB%96%E8%A1%A8%E6%83%85)
+参考 [`meme-generator` 加载其他表情的方式](https://github.com/MemeCrafters/meme-generator/wiki/%E5%8A%A0%E8%BD%BD%E5%85%B6%E4%BB%96%E8%A1%A8%E6%83%85)
 
 ## 声明
 
