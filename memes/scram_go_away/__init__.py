@@ -16,7 +16,7 @@ add_meme(
     scram_go_away,
     min_images=1,
     max_images=1,
-    keywords=["扁扁的走开", "滚开"],
+    keywords=["扁扁的走开", "扁扁的离开", "滚开"],
     date_created=datetime(2026, 5, 28),
     date_modified=datetime(2026, 5, 28),
 )
