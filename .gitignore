@@ -5,3 +5,9 @@ dist/
 venv/
 .venv/
 node_modules/
+
+# CI 生成的 Wiki 文档，不是仓库内容（见 docs/meme_keywords.py）
+docs/meme_keywords.md
+
+# 本地渲染预览产物（见 tools/render_meme.py）
+tools/out/
