@@ -10,9 +10,9 @@
 
 * [表情列表](https://github.com/AIGC-Yunzai/meme-generator-cute/wiki/%E8%A1%A8%E6%83%85%E5%88%97%E8%A1%A8)
 
-### 🥰 时间排序  新-旧
+### 🥰 ~时间排序  新-旧~
 
-* [表情列表](https://github.com/AIGC-Yunzai/meme-generator-cute/wiki/emoji_list)
+* [表情列表（这个不更新了，看上面那个☝🏻）](https://github.com/AIGC-Yunzai/meme-generator-cute/wiki/emoji_list)
 
 ## 使用方式
 
