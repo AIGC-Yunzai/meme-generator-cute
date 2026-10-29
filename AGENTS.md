@@ -3,6 +3,15 @@
 `meme-generator-cute` 是表情包生成器 [MeetWq/meme-generator](https://github.com/MeetWq/meme-generator) 的第三方表情仓库。
 本仓库只存放表情素材（`.png`）与表情实现（`memes/<name>/__init__.py`），运行时由上游加载。
 
+## 未获允许不得提交或推送
+
+**没有仓库维护者的明确允许，不得执行 `git commit`、`git push`，也不得用任何等效手段（`gh pr create`、`gh api` 改远端、rebase/push 组合等）把改动落到远端或历史里。**
+
+- 「明确允许」= 维护者在**当次对话**里针对**本次改动**点了头。之前某次允许过，不代表这次也可以。
+- 改完文件就停在「工作区有改动」这一步，把 `git status` / `git diff` 的结果报给维护者，等指示。
+- 允许只覆盖被批准的范围：批准了 commit 不等于批准 push；批准了某个分支不等于批准 `main`。
+- 需要提交信息时，先把拟用的 commit message 写出来给维护者看，别直接 `git commit` 完再汇报。
+
 ## 目录结构
 
 ```
@@ -28,6 +37,7 @@ tools/
 | 生成关键字文档 | `python docs/meme_keywords.py` |
 | 测量气泡文字范围 | `python tools/measure_bubble.py memes/<name>/images/<img>.png [--seed x,y]` |
 | 本地渲染预览 | `python tools/render_meme.py -m <key> -t "文字"`（`--open` 可直接看图） |
+| 带表情参数渲染 | `python tools/render_meme.py -m <key> --args '{"number": 2}'` |
 | 冲突自检 + 列表情 | `python tools/render_meme.py --list`（有问题退出码非 0） |
 | 语法检查 | `python -m py_compile memes/<name>/__init__.py` |
 
@@ -71,6 +81,17 @@ python -m venv <venv>
 
 产物默认落在 `tools/out/<表情 key>.png`，脚本会打印**绝对路径**；加 `--open` 直接调系统看图器。
 
+**表情自己的参数走 `--args`（JSON 对象），不要指望命令行短选项。** 工具自己的 `-n` 是**输出文件名**，
+和表情的 `-n`（图片编号）不是一回事：表情的短选项在这里传不进去，只能写进 `--args`。
+
+```bash
+# 指定用第 2 张素材，输出叫 preview.png
+python tools/render_meme.py -m honest_money --args '{"number": 2}' -n preview.png
+```
+
+这条是硬约束：上游 `add_meme` 不按 type hint 做运行时校验，`--args` 里写错键名或类型
+要到真正调用表情时才炸；没有 `--args` 时，「指定编号」这条路径根本跑不到。
+
 两个容易踩的点：
 
 - **字体**：需要系统里能解析到中文字体（Windows 的微软雅黑即可）。
@@ -93,7 +114,8 @@ python -m venv <venv>
 
 1. 建目录 `memes/<meme_name>/`，放素材到 `images/`。
 2. 复制一个语义相近的既有实现作为起点（如 `memes/lastOrderThink/`）。
-3. 用 `tools/measure_bubble.py` 量出文字范围，写进 `draw_text`。
+3. 定文字范围：素材**有气泡**就用 `tools/measure_bubble.py` 量；**没有气泡**的（影视截图、
+   要模仿原片自带字幕）就不要用量气泡的工具，字幕区怎么定见 `docs/adr/0001`。
 4. 注册 `add_meme`，跑 `python docs/meme_keywords.py` 自检。
 5. 渲染确认：`python tools/render_meme.py -m <key> --open`，
    看文字有没有出气泡、有没有折成「孤字行」（末行只剩一个字）。
@@ -118,6 +140,10 @@ python -m venv <venv>
       raise TextOverLength(text)
   ```
 - `fill` 取素材气泡描边的同色系深色，让文字像气泡自带的字（`lastOrderThink` 用 `#5a3a1c`）。
+  字幕类表情是例外：固定纯白字 + 纯黑描边，见 `docs/adr/0001`。
+- **带参数的表情**（多图选择、开关）照 `memes/elysia_holdsign/` 抄：参数模型用上游的
+  `MemeArgsModel` / `MemeArgsType` / `ParserOption`（定义在 `meme_generator/meme.py`），
+  本地用 `render_meme.py --args` 传。参数约定见 `docs/adr/0002`。
 
 ## 气泡文字范围怎么定
 
@@ -142,6 +168,14 @@ x 179..719 / y 213..320，远在气泡外接框 (94, 32, 813, 492) 之内），
 
 改完文字范围**务必用 `tools/render_meme.py` 渲染一次** —— 这个矩形能不能画下、
 画出来好不好看，只有真渲染一次才知道，量出来的数字本身说明不了。
+
+### 定位已经画上去的字：与原素材差分
+
+想知道成品里字到底落在哪，**拿成品和原素材做差分**：`abs(a - b).sum(2) > 6` 的 bbox
+就是这次画上去的全部像素（含描边），精确到像素。比按亮度阈值找白字可靠得多——
+画面里的白色高光、浅色衣领会一起算进去（实测把 635..1036 量成 526..1230，中心偏 40px）。
+
+这个技巧**只用于测量**；拿整图 diff 当回归断言会假红，原因见「注意事项」最后一条。
 
 `measure_bubble.py` 会拒绝越界 seed，并在填充区域**触及图片四边**时报错：
 那说明种子点不在封闭气泡内（点在透明背景上，或描边有缺口导致漏填充），
@@ -205,7 +239,7 @@ triage 五个状态角色沿用默认标签名（`needs-triage` / `needs-info` /
 
 ### Domain docs
 
-单上下文（single-context）：一个 `GLOSSARY.md` + 一个 `docs/adr/`，都还没建，由 `/domain-modeling` 按需惰性生成。详见 `docs/agents/domain.md`。
+单上下文（single-context）：一个 `GLOSSARY.md` + 一个 `docs/adr/`，都已建，动手前先读。这两处的具体约定只写在 `docs/agents/domain.md`，这里不再复述一份（复述过的都过期了）。
 
 ## 参考
 

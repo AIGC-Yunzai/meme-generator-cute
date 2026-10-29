@@ -36,7 +36,7 @@ add_meme(
     max_texts=1,
     default_texts=[DEFAULT_TEXT],
     keywords=["呆毛想", "小呆毛想"],
-    tags={"米哈游"},
+    tags={"米哈游", "小呆毛"},
     date_created=datetime(2026, 8, 23),
     date_modified=datetime(2026, 8, 23),
 )

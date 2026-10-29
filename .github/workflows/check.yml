@@ -1,0 +1,41 @@
+name: Check Memes
+
+# `tools/render_meme.py --list` 本来就是为了进 CI 写的（有问题退出码非 0）：
+# 它真实加载 memes/ 跑一遍上游注册，能发现 key 撞上游内置表情、模块 import 失败、
+# 仓库内 key / keywords 重复。这里把它接上，别让「最低限度的第三条验证」只靠人记得跑。
+#
+# 只加载、不画字，所以 CI 上不需要中文字体，不会因为字体缺失假红。
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -U pip "meme_generator<0.2.0" filetype pillow
+
+      # skia（pil-utils 的依赖）在 Ubuntu 上要系统级的 EGL/GL 库，否则
+      # `import meme_generator` 直接报 libEGL.so.1: cannot open shared object file。
+      # 本地 Windows 看不到这个坑，只有 Linux 上才暴露。
+      - name: Install system libraries for skia
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libegl1 libgl1
+
+      - name: Compile meme modules
+        run: python -m py_compile memes/*/__init__.py
+
+      - name: Generate keyword docs
+        run: python docs/meme_keywords.py
+
+      - name: Check duplicate keys and registration
+        run: python tools/render_meme.py --list

@@ -17,6 +17,9 @@
     # 换个输出目录 / 换个文件名
     python tools/render_meme.py -o D:/tmp -n preview.png
 
+    # 传表情自己的参数（JSON 对象），例如指定用第 2 张素材
+    python tools/render_meme.py -m honest_money --args '{"number": 2}'
+
     # 列出本仓库表情，并做冲突自检（有问题退出码非 0，可直接进 CI）
     python tools/render_meme.py --list
 
@@ -33,6 +36,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import json
 import os
 import subprocess
 import sys
@@ -305,7 +309,15 @@ def main() -> None:
     parser.add_argument("-m", "--meme", default=DEFAULT_MEME, help=f"表情 key，默认 {DEFAULT_MEME}")
     parser.add_argument("-t", "--text", action="append", help="文字，可重复传入以填多个文本槽")
     parser.add_argument("-o", "--out-dir", type=Path, default=DEFAULT_OUT_DIR, help="输出目录")
-    parser.add_argument("-n", "--name", help="输出文件名，默认 <表情 key>.png")
+    parser.add_argument(
+        "-n",
+        "--name",
+        help="输出文件名，默认 <表情 key>.png（不是表情的图片编号，那个用 --args 传）",
+    )
+    parser.add_argument(
+        "--args",
+        help='表情参数，JSON 对象，例如 \'{"number": 2}\'；不传则用表情自己的默认值',
+    )
     parser.add_argument("--open", action="store_true", help="渲染后用系统默认程序打开图片")
     parser.add_argument(
         "--list",
@@ -316,6 +328,18 @@ def main() -> None:
 
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")  # Windows 控制台默认不是 UTF-8
+
+    meme_args: dict = {}
+    if args.args:
+        try:
+            meme_args = json.loads(args.args)
+        except json.JSONDecodeError as e:
+            sys.exit(f'--args 不是合法 JSON：{e}\n示例: --args \'{{"number": 2}}\'')
+        if not isinstance(meme_args, dict):
+            sys.exit(
+                "--args 必须是 JSON 对象，"
+                f"收到的是 {type(meme_args).__name__}；示例: --args '{{\"number\": 2}}'"
+            )
 
     keys, expected = load_repo_memes()
 
@@ -368,11 +392,20 @@ def main() -> None:
     print(f"表情      : {meme.key}")
     print(f"关键词    : {' / '.join(meme.keywords) or '（无）'}")
     print(f"文字约束  : {p.min_texts}..{p.max_texts} 段，图片 {p.min_images}..{p.max_images} 张")
+    options = p.args_type.parser_options if p.args_type else []
+    for opt in options:
+        print(f"表情参数  : {' / '.join(opt.names)} — {opt.help_text or '（无说明）'}")
+    arg_names = [a.name for a in (options[0].args or [])] if options else []
+    if arg_names and not meme_args:  # 只在没传参数时提示写法，免得和「本次参数」打架
+        example = "--args '{" + ", ".join(f'"{n}": 1' for n in arg_names) + "}'"
+        print(f"            传法 {example}（本工具的 -n 是输出文件名，不是表情的编号）")
     print(f"本次文字  : {texts}")
+    if meme_args:
+        print(f"本次参数  : {meme_args}")
 
     try:
         # Meme.__call__ 是 keyword-only，且会自己校验文字/图片数量
-        buf = meme(texts=texts)
+        buf = meme(texts=texts, args=meme_args)
     except MemeGeneratorException as e:
         sys.exit(f"生成失败（{type(e).__name__}）：{e}")
 

@@ -16,8 +16,8 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
 
 ```
 /
-├── GLOSSARY.md          ← not yet created
-├── docs/adr/            ← not yet created
+├── GLOSSARY.md          ← canonical vocabulary
+├── docs/adr/            ← decisions that were hard to reverse
 ├── docs/agents/         ← this config
 ├── memes/<meme_name>/   ← one meme: __init__.py + images/
 └── tools/
@@ -25,11 +25,12 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
 
 ## Terms this repo already relies on
 
-`AGENTS.md` carries the working vocabulary for this codebase; treat it as the de-facto glossary until `GLOSSARY.md` exists. Terms that are easy to confuse and that the skills should not paraphrase freely:
+`GLOSSARY.md` at the repo root is the canonical vocabulary. `AGENTS.md` still carries the workflow rules and the pitfalls; read both. Terms that are easy to confuse and that the skills should not paraphrase freely:
 
-- **meme key** — the first argument to `add_meme`, the key in the upstream `manager._memes` registry (e.g. `last_order_think`). Not the directory name.
-- **keywords** — `Meme` metadata used as trigger words by downstream adapters. Lowercase snake_case list, distinct from the key.
+- **meme key** — the first argument to `add_meme`, the key in the upstream `manager._memes` registry (e.g. `last_order_think`). Not the directory name. Always lowercase snake_case.
+- **keywords** — `Meme` metadata used as trigger words by downstream adapters. Free-form strings (this repo uses Chinese), not necessarily snake_case, and distinct from the key.
 - **`TEXT_AREA`** — the `draw_text` rectangle inside the speech bubble of a meme's material image.
+- **字幕区 (subtitle area)** — the `draw_text` rectangle of a subtitle meme: a film-frame material with no speech bubble, where the text imitates the frame's own subtitle line. Not the same thing as `TEXT_AREA`.
 - **blocker** — `tools/render_meme.py --list` exiting non-zero. Distinct from a warning.
 
 ## Use the glossary's vocabulary

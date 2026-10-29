@@ -11,3 +11,6 @@ docs/meme_keywords.md
 
 # 本地渲染预览产物（见 tools/render_meme.py）
 tools/out/
+
+# 本地测试用的上游 meme-generator 克隆 + 隔离 venv（见 AGENTS.md）
+temp/
