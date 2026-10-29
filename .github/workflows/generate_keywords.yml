@@ -4,7 +4,7 @@ permissions:  # 添加权限配置
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 jobs:

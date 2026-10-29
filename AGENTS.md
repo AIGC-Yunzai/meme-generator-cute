@@ -11,6 +11,8 @@
 - 改完文件就停在「工作区有改动」这一步，把 `git status` / `git diff` 的结果报给维护者，等指示。
 - 允许只覆盖被批准的范围：批准了 commit 不等于批准 push；批准了某个分支不等于批准 `main`。
 - 需要提交信息时，先把拟用的 commit message 写出来给维护者看，别直接 `git commit` 完再汇报。
+- 反向也要说清：**「落地」「提交」都只算 commit，不包含 push。** push 必须明说「push」或「推到远端」，
+  别把「落地」读成上线。
 
 ## 目录结构
 
@@ -92,12 +94,15 @@ python tools/render_meme.py -m honest_money --args '{"number": 2}' -n preview.pn
 这条是硬约束：上游 `add_meme` 不按 type hint 做运行时校验，`--args` 里写错键名或类型
 要到真正调用表情时才炸；没有 `--args` 时，「指定编号」这条路径根本跑不到。
 
-两个容易踩的点：
+三个容易踩的点：
 
 - **字体**：需要系统里能解析到中文字体（Windows 的微软雅黑即可）。
   上游 `resources/fonts/` 是可选的；找不到字体时 `draw_text` 会报错。
 - **`SkIcuLoader: datafile missing ... icudtl.dat`**：Windows 上 skia 的已知告警，**非致命**
   （中文照常渲染），不用去补那个文件。
+- **Linux / 容器 / CI 上 `import meme_generator` 报 `libEGL.so.1: cannot open shared object file`**：
+  skia 要系统级的 EGL/GL 库，`apt install libegl1 libgl1` 就好。这条在本地 Windows 永远
+  复现不了，只有换到 Linux 才炸——写 Dockerfile 或新 workflow 时先装它。
 
 `render_meme.py` 是用 `meme_generator.load_memes(memes/)` 走**上游真实注册路径**的，
 所以 `--list` 能验证：模块可导入、`add_meme` 的注册过程能跑完、注册结果与目录对得上。
@@ -200,8 +205,10 @@ x 179..719 / y 213..320，远在气泡外接框 (94, 32, 813, 492) 之内），
   取不到值，生成的表格里「默认文字」一列为空；`date_created=datetime(...)` 这种调用是**特判**支持的，
   严格说并不是「字面量」。保持一致即可；若想让文档显示默认文字，得在注册处直接写字符串字面量。
   要更进一步（解析模块级常量）得改 `docs/meme_keywords.py`，但那份文件是 CI 在用的，改前先想清楚。
-- 两个 Wiki 相关 workflow 的分支不一致：`generate_keywords.yml` 监听 `master`，
-  `update_emoji_list.yml` 监听 `main`。改 CI 时注意别只改一边。
+- 两个 Wiki workflow 都监听 `main`：`generate_keywords.yml` 写 `emoji_list.md`，
+  `update_emoji_list.yml` 写 `wiki_emoji_list.md`。**仓库没有 `master` 分支**，
+  workflow 的 `branches` 里写成 `master` 就永远不会触发——`generate_keywords.yml` 曾这样
+  静默死了五个月，关键词 Wiki 一直停在旧数据。
 - 素材来自网络，新增图片请确认可收录，仓库声明见 `README.md`。
 - **不要用「整图逐像素 diff」给表情写回归测试**：`DSniangThink.png` 的透明背景像素里
   存的是白色 RGB（如 `(255,254,255,0)`），PIL 保存 PNG 时会把 alpha=0 的 RGB 归零，
