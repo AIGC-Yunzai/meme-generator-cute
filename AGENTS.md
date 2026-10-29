@@ -11,6 +11,7 @@ memes/<meme_name>/
   images/                 # 素材；一般只有一张主图，多图按 01.png、02.png … 命名
 docs/
   meme_keywords.py        # 扫描 memes/ 生成 docs/meme_keywords.md，再同步到 Wiki
+  agents/                 # 工程技能的仓库级配置（issue tracker / triage 标签 / domain 布局）
 tools/
   measure_bubble.py       # 命令行测量气泡内可用文字范围
   render_meme.py          # 本地渲染预览 + 重复自检，产物落到 tools/out/（已 gitignore）
@@ -191,6 +192,20 @@ x 179..719 / y 213..320，远在气泡外接框 (94, 32, 813, 492) 之内），
      多行正文会被压进小区域再纵向居中，行数一多首行就顶到状态行上
      （实测「上\n下」的正文首行在 y=189，状态行底边 187，只差 2px）。
      `deepSeekThink` 的判据是「字数 ≤ `SHORT_TEXT_MAX` **且**不含 `\n` / `\r`」。
+
+## Agent skills
+
+### Issue tracker
+
+Issue 与 spec 记为 GitHub Issue，用 `gh` CLI 读写 `AIGC-Yunzai/meme-generator-cute`；外部 PR 不算请求入口。详见 `docs/agents/issue-tracker.md`。
+
+### Triage labels
+
+triage 五个状态角色沿用默认标签名（`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`），类别沿用既有的 `bug` / `enhancement`。详见 `docs/agents/triage-labels.md`。
+
+### Domain docs
+
+单上下文（single-context）：一个 `GLOSSARY.md` + 一个 `docs/adr/`，都还没建，由 `/domain-modeling` 按需惰性生成。详见 `docs/agents/domain.md`。
 
 ## 参考
 
