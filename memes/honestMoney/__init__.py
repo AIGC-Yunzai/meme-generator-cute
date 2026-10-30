@@ -2,6 +2,7 @@ import random
 from datetime import datetime
 from pathlib import Path
 
+from PIL import Image, ImageFilter
 from pil_utils import BuildImage
 from pydantic import Field
 
@@ -23,13 +24,16 @@ help_text = f"图片编号，范围为 1~{TOTAL_NUM}，0 表示随机"
 # 素材 1672x941。参考帧（1920x1080）里中文那行墨迹在 y 922..964、x 743..1176，
 # 水平中心与图宽中心重合；按 0.871 折算到本素材是 y 803..840，中心 821。
 # 字幕区以该行为垂直中心，宽度取画面的 70%（真实字幕一行不会铺满整幅宽），
-# 高度按 44px 字号两行排版（约 116px）留量，折行时上下扩展而不是一路向下。
+# 高度按固定字号的 54px 两行排版（142px）留 6px 余量，折行时上下扩展而不是一路向下。
 # 换素材必须重新量，这组数字来自这一帧的具体构图（见 docs/adr/0001）。
-SUBTITLE_AREA = (251, 760, 1421, 884)
-SUBTITLE_FONT_MAX = 44
-SUBTITLE_FONT_MIN = 26
-# 参考帧描边约 3~4px / 字号约 50px，折算到 44px 字号约 0.07
-SUBTITLE_STROKE_RATIO = 0.07
+SUBTITLE_AREA = (251, 748, 1421, 896)
+# 字号固定，不随文字长短自适应：同一个表情每次出图大小一致，放大字号时也不会被
+# 「长句自动缩字」抵消。代价是字数多了不再自动缩小，折成两行还放不下就抛 TextOverLength。
+# 上限约 42 个汉字；改字号要同时改 SUBTITLE_AREA 的高度（见 docs/adr/0003）。
+SUBTITLE_FONT_SIZE = 54
+# 描边宽度，单位像素（不是比例）：参考帧描边约 3~4px / 字号约 50px。
+# 由 alpha 膨胀实现 MaxFilter(2*3+1)，彩色 emoji 才会一起长边（见 docs/adr/0004）。
+SUBTITLE_OUTLINE = 3
 
 
 class Model(MemeArgsModel):
@@ -48,6 +52,36 @@ args_type = MemeArgsType(
 )
 
 
+def draw_subtitle(frame: BuildImage, text: str) -> None:
+    """把字幕画到 frame 上：先落到透明层，再用 alpha 膨胀长出黑描边。
+
+    不能直接给 `draw_text` 传 `stroke_fill`：彩色 emoji 是位图字形，skia 不认描边 paint，
+    `🐷🐷侠` 里的猪会没有任何轮廓，压在浅色皮肤/白衣上直接糊掉。alpha 膨胀对彩色字形
+    一样有效，所以描边从「画出来」改成「事后长出来」（见 docs/adr/0004）。
+    """
+    layer = BuildImage.new("RGBA", (frame.width, frame.height), (0, 0, 0, 0))
+    layer.draw_text(
+        SUBTITLE_AREA,
+        text,
+        max_fontsize=SUBTITLE_FONT_SIZE,
+        min_fontsize=SUBTITLE_FONT_SIZE,  # 两个值相等 = 固定字号，画不下直接抛 ValueError
+        allow_wrap=True,
+        lines_align="center",
+        fill="white",
+    )
+
+    dilated = layer.image.getchannel("A").filter(
+        ImageFilter.MaxFilter(SUBTITLE_OUTLINE * 2 + 1)
+    )
+    outline = Image.new("RGBA", layer.image.size, (0, 0, 0, 0))
+    outline.putalpha(dilated)
+
+    base = frame.image.convert("RGBA")
+    base.alpha_composite(outline)
+    base.alpha_composite(layer.image)
+    frame.image = base.convert("RGB")
+
+
 def honest_money(images, texts: list[str], args: Model):
     text = texts[0]
     if args.number == 0:
@@ -59,17 +93,7 @@ def honest_money(images, texts: list[str], args: Model):
 
     frame = BuildImage.open(img_dir / f"{num:02d}.png")
     try:
-        frame.draw_text(
-            SUBTITLE_AREA,
-            text,
-            max_fontsize=SUBTITLE_FONT_MAX,
-            min_fontsize=SUBTITLE_FONT_MIN,
-            allow_wrap=True,
-            lines_align="center",
-            fill="white",
-            stroke_ratio=SUBTITLE_STROKE_RATIO,
-            stroke_fill="black",
-        )
+        draw_subtitle(frame, text)
     except ValueError:
         raise TextOverLength(text)
     return frame.save_png()

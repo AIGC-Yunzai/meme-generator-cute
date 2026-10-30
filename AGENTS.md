@@ -40,6 +40,7 @@ tools/
 | 测量气泡文字范围 | `python tools/measure_bubble.py memes/<name>/images/<img>.png [--seed x,y]` |
 | 本地渲染预览 | `python tools/render_meme.py -m <key> -t "文字"`（`--open` 可直接看图） |
 | 带表情参数渲染 | `python tools/render_meme.py -m <key> --args '{"number": 2}'` |
+| 多张预览拼一张 | `python tools/preview_sheet.py tools/out/a.png tools/out/b.png -o tools/out/sheet.png` |
 | 冲突自检 + 列表情 | `python tools/render_meme.py --list`（有问题退出码非 0） |
 | 语法检查 | `python -m py_compile memes/<name>/__init__.py` |
 
@@ -94,6 +95,10 @@ python tools/render_meme.py -m honest_money --args '{"number": 2}' -n preview.pn
 这条是硬约束：上游 `add_meme` 不按 type hint 做运行时校验，`--args` 里写错键名或类型
 要到真正调用表情时才炸；没有 `--args` 时，「指定编号」这条路径根本跑不到。
 
+**要对比多个版本（字号、描边、换素材）时，先拼一张再读图**：`tools/preview_sheet.py` 把多张
+竖着拼起来并标序号。字号差 4px、描边差 1px，单看一张根本看不出来，并排才看得出来；
+顺带把读图成本从 N 次降到 1 次。
+
 三个容易踩的点：
 
 - **字体**：需要系统里能解析到中文字体（Windows 的微软雅黑即可）。
@@ -103,6 +108,10 @@ python tools/render_meme.py -m honest_money --args '{"number": 2}' -n preview.pn
 - **Linux / 容器 / CI 上 `import meme_generator` 报 `libEGL.so.1: cannot open shared object file`**：
   skia 要系统级的 EGL/GL 库，`apt install libegl1 libgl1` 就好。这条在本地 Windows 永远
   复现不了，只有换到 Linux 才炸——写 Dockerfile 或新 workflow 时先装它。
+
+写脚本落盘时注意：`BuildImage.save()` **不是** PIL 的 `Image.save(path)`，
+它的签名是 `save(format: str) -> BytesIO`——第一个参数是格式名，而且只返回内存对象、不写文件。
+落盘要么 `frame.save_png()` 拿 bytes 再 `write_bytes`，要么 `frame.image.save(path)` 走 PIL。
 
 `render_meme.py` 是用 `meme_generator.load_memes(memes/)` 走**上游真实注册路径**的，
 所以 `--list` 能验证：模块可导入、`add_meme` 的注册过程能跑完、注册结果与目录对得上。

@@ -399,7 +399,8 @@ def main() -> None:
     if arg_names and not meme_args:  # 只在没传参数时提示写法，免得和「本次参数」打架
         example = "--args '{" + ", ".join(f'"{n}": 1' for n in arg_names) + "}'"
         print(f"            传法 {example}（本工具的 -n 是输出文件名，不是表情的编号）")
-    print(f"本次文字  : {texts}")
+    counts = " / ".join(str(len(t)) for t in texts)
+    print(f"本次文字  : {texts}（{counts} 字）")
     if meme_args:
         print(f"本次参数  : {meme_args}")
 
